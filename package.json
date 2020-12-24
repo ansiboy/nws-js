@@ -1,0 +1,13 @@
+{
+    "name": "maishu-nws-js",
+    "dependencies": {
+        "@babel/core": "^7.12.10",
+        "maishu-node-web-server": "^1.13.0",
+        "maishu-toolkit": "^1.6.1"
+    },
+    "devDependencies": {
+        "@types/node": "^14.14.16"
+    },
+    "main": "index.js",
+    "version": "1.0.0"
+}
