@@ -73,8 +73,8 @@ export function notAbsolutePath(path: string) {
     return error;
 }
 
-export function pageNotFound(path: string) {
-    let msg = `Path '${path}' not found.`;
+export function pageNotFound(path: string, dir: string) {
+    let msg = `Path '${path}' not found in directory '${dir}'.`;
     let error = new Error(msg);
     error.name = pageNotFound.name;
     error.statusCode = 404;

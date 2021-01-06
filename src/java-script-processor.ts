@@ -1,118 +1,166 @@
-import { RequestContext, RequestProcessor, RequestResult } from "maishu-node-web-server";
+import { getLogger, RequestContext, RequestProcessor, RequestResult } from "maishu-node-web-server";
 import * as errors from "./errors.js";
 import * as fs from "fs";
 import * as babel from "@babel/core";
 
 import { transformJS } from "./transform/transform-js.js";
 import { transformTS } from "./transform/transform-ts.js";
+import * as path from "path";
 
-export class JavaScriptProcessor implements RequestProcessor {
+interface Options {
+    babel: { [key: string]: babel.TransformOptions },
+    // 脚本夹的虚拟路径
+    directoryPath?: string,
+    ignorePaths: string[],
+}
 
-    babelOptions: { [key: string]: babel.TransformOptions } = {
-        "\\S+.ts$": {
-            "presets": [
-                ["@babel/preset-env", {
-                    "targets": { chrome: 58 }
-                }],
-                // "@babel/plugin-transform-typescript"
-            ],
-            plugins: [
-                "@babel/plugin-transform-typescript",
-                // "@babel/plugin-transform-modules-amd"
-            ]
+export class JavaScriptProcessor implements RequestProcessor<Options> {
+
+    options: Options = {
+        babel: {
+            "\\S+.ts$": {
+                "presets": [
+                    ["@babel/preset-env", {
+                        "targets": { chrome: 58 }
+                    }],
+                ],
+                plugins: [
+                    "@babel/plugin-transform-typescript",
+                ]
+            },
+            "\\S+.js$": {
+                "presets": [
+                    ["@babel/preset-env", {
+                        "targets": { chrome: 58 }
+                    }],
+                ],
+                plugins: [
+                ]
+            },
+            "\\S+.tsx$": {
+                "presets": [
+                    ["@babel/preset-env", {
+                        "targets": { chrome: 58 }
+                    }],
+                ],
+                plugins: [
+                    ["@babel/plugin-transform-typescript", { isTSX: true }],
+                    ["@babel/plugin-transform-react-jsx", { "pragma": "React.createElement", "pragmaFrag": "React.Fragment" }],
+                ]
+            },
+            "\\S+.jsx$": {
+                "presets": [
+                    ["@babel/preset-env", {
+                        "targets": { chrome: 58 }
+                    }],
+                ],
+                plugins: [
+                    ["@babel/plugin-transform-react-jsx", { "pragma": "React.createElement", "pragmaFrag": "React.Fragment" }],
+                ]
+            },
         },
-        "\\S+.js$": {
-            "presets": [
-                ["@babel/preset-env", {
-                    "targets": { chrome: 58 }
-                }],
-                // "@babel/plugin-transform-typescript"
-            ],
-            plugins: [
-                // "@babel/plugin-transform-modules-amd"
-            ]
-        },
-        "\\S+.tsx$": {
-            "presets": [
-                ["@babel/preset-env", {
-                    "targets": { chrome: 58 }
-                }],
-            ],
-            plugins: [
-                ["@babel/plugin-transform-typescript", { isTSX: true }],
-                ["@babel/plugin-transform-react-jsx", { "pragma": "React.createElement", "pragmaFrag": "React.Fragment" }],
-                // "@babel/plugin-transform-modules-amd"
-            ]
-        },
-        "\\S+.jsx$": {
-            "presets": [
-                ["@babel/preset-env", {
-                    "targets": { chrome: 58 }
-                }],
-                // "@babel/plugin-transform-typescript"
-            ],
-            plugins: [
-                ["@babel/plugin-transform-react-jsx", { "pragma": "React.createElement", "pragmaFrag": "React.Fragment" }],
-                // "@babel/plugin-transform-modules-amd"
-            ]
-        },
+        ignorePaths: ["\\S+node_modules\\S+", "\\S+lib\\S+"],
+    }
+
+    get babelOptions(): { [key: string]: babel.TransformOptions } {
+        return this.options.babel;
+    }
+    set babelOptions(value) {
+        this.options.babel = value;
+    }
+
+    get ignorePaths(): string[] {
+        return this.options.ignorePaths;
+    }
+    set ignorePaths(value) {
+        this.options.ignorePaths = value;
+    }
+
+    get basePath(): string {
+        return this.options.directoryPath;
     };
-
-    ignorePaths = ["\\S+node_modules\\S+", "\\S+lib\\S+"];
+    set basePath(value) {
+        this.options.directoryPath = value;
+    }
 
     async execute(ctx: RequestContext): Promise<RequestResult | null> {
         if (!ctx.virtualPath.endsWith(".js") && !ctx.virtualPath.endsWith(".ts") &&
             !ctx.virtualPath.endsWith(".jsx") && !ctx.virtualPath.endsWith(".tsx"))
             return null;
 
-        let jsVirtualPath = ctx.virtualPath;
-        let jsxVirtualPath = ctx.virtualPath.substr(0, ctx.virtualPath.length - ".js".length) + ".jsx";
-        let tsVirtualPath = ctx.virtualPath.substr(0, ctx.virtualPath.length - ".js".length) + ".ts";
-        let tsxVirtualPath = ctx.virtualPath.substr(0, ctx.virtualPath.length - ".js".length) + ".tsx";
+        let pathWidthoutExt: string = ctx.virtualPath;
+        if (pathWidthoutExt.endsWith(".js")) {
+            pathWidthoutExt = pathWidthoutExt.substring(0, pathWidthoutExt.length - ".js".length);
+        }
 
-        let physicalPath = ctx.rootDirectory.findFile(jsVirtualPath);
+        if (pathWidthoutExt.endsWith(".ts") || pathWidthoutExt.endsWith(".tsx")) {
+            let ext = path.extname(pathWidthoutExt);
+            pathWidthoutExt = pathWidthoutExt.substr(0, pathWidthoutExt.length - ext.length);
+        }
+
+        let jsVirtualPath = pathWidthoutExt + ".js";
+        let jsxVirtualPath = pathWidthoutExt + ".jsx";
+        let tsVirtualPath = pathWidthoutExt + ".ts";
+        let tsxVirtualPath = pathWidthoutExt + ".tsx";
+
+        let dir = this.basePath ? ctx.rootDirectory.findDirectory(this.basePath) : ctx.rootDirectory;
+        if (!dir)
+            return null;
+
+        let physicalPath = dir.findFile(jsVirtualPath);
         if (physicalPath == null) {
-            physicalPath = ctx.rootDirectory.findFile(jsxVirtualPath);
+            physicalPath = dir.findFile(jsxVirtualPath);
         }
 
         if (physicalPath == null) {
-            physicalPath = ctx.rootDirectory.findFile(tsVirtualPath);
+            physicalPath = dir.findFile(tsVirtualPath);
         }
 
         if (physicalPath == null) {
-            physicalPath = ctx.rootDirectory.findFile(tsxVirtualPath);
+            physicalPath = dir.findFile(tsxVirtualPath);
         }
 
-        if (physicalPath == null) {
-            throw errors.pageNotFound(`${jsxVirtualPath} ${jsVirtualPath} ${tsVirtualPath} ${tsxVirtualPath}`);
-        }
-
-
-        let buffer = fs.readFileSync(physicalPath);
-        let code = buffer.toString();
-        let options: babel.TransformOptions | undefined;
-
+        let isTS = physicalPath.endsWith(".ts") || physicalPath.endsWith(".tsx");
+        let isJS = !isTS;
         let skip = false;
-        for (let i = 0; i < this.ignorePaths.length; i++) {
-            let regex = new RegExp(this.ignorePaths[i]);
-            if (regex.test(ctx.virtualPath)) {
-                skip = true;
-                break;
-            }
-        }
-
-        if (!skip) {
-            for (let key in this.babelOptions) {
-                let regex = new RegExp(key);
-                if (regex.test(physicalPath)) {
-                    options = this.babelOptions[key];
+        if (isJS) {
+            for (let i = 0; i < this.ignorePaths.length; i++) {
+                let regex = new RegExp(this.ignorePaths[i]);
+                if (regex.test(ctx.virtualPath)) {
+                    skip = true;
                     break;
                 }
             }
         }
 
+        if (skip)
+            return null;
+
+        if (physicalPath == null) {
+            throw errors.pageNotFound(`${jsxVirtualPath} ${pathWidthoutExt} ${tsVirtualPath} ${tsxVirtualPath}`, dir.virtualPath);
+        }
+
+        let pkg = require("../package.json");
+        let logger = getLogger(pkg.name, ctx.logLevel);
+        logger.info(`Physical path is ${physicalPath}.`);
+
+        let buffer = fs.readFileSync(physicalPath);
+        let code = buffer.toString();
+        let options: babel.TransformOptions | undefined;
+
+
+        for (let key in this.babelOptions) {
+            let regex = new RegExp(key);
+            if (regex.test(physicalPath)) {
+                options = this.babelOptions[key];
+                logger.info(`Babel option key is ${key}.`);
+                break;
+            }
+        }
+
         if (options) {
-            let isTS = physicalPath.endsWith(".ts") || physicalPath.endsWith(".tsx");
+            logger.info(`Babel option is:\n`);
+            logger.info(options);
             if (isTS) {
                 // let r = babel.transform(code, options);
                 // code = r?.code || "/** Babel transform code fail. */";
