@@ -120,6 +120,11 @@ export class JavaScriptProcessor implements RequestProcessor<Options> {
             physicalPath = dir.findFile(tsxVirtualPath);
         }
 
+        if (physicalPath == null) {
+            return null;
+            // throw errors.pageNotFound(`${jsxVirtualPath} ${pathWidthoutExt} ${tsVirtualPath} ${tsxVirtualPath}`, dir.virtualPath);
+        }
+
         let isTS = physicalPath.endsWith(".ts") || physicalPath.endsWith(".tsx");
         let isJS = !isTS;
         let skip = false;
@@ -136,9 +141,6 @@ export class JavaScriptProcessor implements RequestProcessor<Options> {
         if (skip)
             return null;
 
-        if (physicalPath == null) {
-            throw errors.pageNotFound(`${jsxVirtualPath} ${pathWidthoutExt} ${tsVirtualPath} ${tsxVirtualPath}`, dir.virtualPath);
-        }
 
         let pkg = require("../package.json");
         let logger = getLogger(pkg.name, ctx.logLevel);
