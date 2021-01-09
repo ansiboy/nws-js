@@ -176,4 +176,12 @@ export class JavaScriptProcessor implements RequestProcessor<Options> {
         const encoding = 'UTF-8';
         return { content: code, headers: { "content-type": `application/x-javascript; charset=${encoding}` } };
     }
+
+    static transformJS(originalCode: string, options: babel.TransformOptions) {
+        return transformJS(originalCode, options);
+    }
+
+    static transformTS(originalCode: string, options: babel.TransformOptions) {
+        return transformTS(originalCode, options);
+    }
 }
