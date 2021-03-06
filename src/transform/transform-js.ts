@@ -183,8 +183,8 @@ class Nodecreator {
         if (!moduleName) throw errors.argumentNull("moduleName");
 
 
-        if (moduleName.endsWith(".less")) {
-            moduleName = `less!${moduleName}`;
+        if (moduleName.endsWith(".less") && !moduleName.startsWith("css!")) {
+            moduleName = `css!${moduleName}`;
         }
 
 
