@@ -13,9 +13,9 @@ interface Options {
     ignorePaths: string[],
 }
 
-export class JavaScriptProcessor implements RequestProcessor<Options> {
+export class JavaScriptProcessor implements RequestProcessor {
 
-    options: Options = {
+    private options: Options = {
         babel: {
             "\\S+.ts$": {
                 "presets": [

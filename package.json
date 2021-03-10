@@ -3,7 +3,7 @@
     "dependencies": {
         "@babel/core": "^7.12.10",
         "@babel/plugin-proposal-decorators": "^7.12.12",
-        "maishu-node-web-server": "^1.14.0",
+        "maishu-node-web-server": "^1.16.5",
         "maishu-toolkit": "^1.6.1"
     },
     "devDependencies": {
