@@ -68,17 +68,21 @@ export class JavaScriptProcessor implements RequestProcessor {
         this.options.babel = value;
     }
 
+    /** 获取 JS 忽略的路径 */
     get ignorePaths(): string[] {
         return this.options.ignorePaths;
     }
+    /** 设置 JS 忽略的路径，设置了该路径，对于匹配的 JS 文件不进行转换处理 */
     set ignorePaths(value) {
         this.options.ignorePaths = value;
     }
 
-    get basePath(): string {
+    /** 获取脚本夹的虚拟路径 */
+    get directoryPath(): string | undefined {
         return this.options.directoryPath;
     };
-    set basePath(value) {
+    /** 设置脚本夹的虚拟路径 */
+    set directoryPath(value: string | undefined) {
         this.options.directoryPath = value;
     }
 
@@ -102,7 +106,7 @@ export class JavaScriptProcessor implements RequestProcessor {
         let tsVirtualPath = pathWidthoutExt + ".ts";
         let tsxVirtualPath = pathWidthoutExt + ".tsx";
 
-        let dir = this.basePath ? ctx.rootDirectory.findDirectory(this.basePath) : ctx.rootDirectory;
+        let dir = this.directoryPath ? ctx.rootDirectory.findDirectory(this.directoryPath) : ctx.rootDirectory;
         if (!dir)
             return null;
 
@@ -161,7 +165,7 @@ export class JavaScriptProcessor implements RequestProcessor {
 
         if (options) {
             logger.info(`Babel option is:\n`);
-            logger.info(options);
+            logger.info(JSON.stringify(options, null, "    "));
             if (isTS) {
                 // let r = babel.transform(code, options);
                 // code = r?.code || "/** Babel transform code fail. */";
