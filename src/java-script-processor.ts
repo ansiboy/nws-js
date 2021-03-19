@@ -125,7 +125,6 @@ export class JavaScriptProcessor implements RequestProcessor {
 
         if (physicalPath == null) {
             return null;
-            // throw errors.pageNotFound(`${jsxVirtualPath} ${pathWidthoutExt} ${tsVirtualPath} ${tsxVirtualPath}`, dir.virtualPath);
         }
 
         let isTS = physicalPath.endsWith(".ts") || physicalPath.endsWith(".tsx");
