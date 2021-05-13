@@ -166,14 +166,14 @@ export class JavaScriptProcessor implements RequestProcessor {
             logger.info(`Babel option is:\n`);
             logger.info(JSON.stringify(options, null, "    "));
             if (isTS) {
-                // let r = babel.transform(code, options);
-                // code = r?.code || "/** Babel transform code fail. */";
                 code = transformTS(code, options);
             }
             else {
                 code = transformJS(code, options);
             }
         }
+
+        code = `Physical Path:${physicalPath}\r\n${code}`;
 
         const encoding = 'UTF-8';
         return { content: code, headers: { "content-type": `application/x-javascript; charset=${encoding}` } };

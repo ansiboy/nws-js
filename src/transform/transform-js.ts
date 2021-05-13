@@ -50,30 +50,6 @@ export function transformJS(originalCode: string, options: babel.TransformOption
         program.body.unshift(...g.improts);
     }
 
-    // let options = {
-    //     plugins: [
-    //         ["@babel/transform-modules-amd", { noInterop: true }],
-    //     ] as Array<any>
-    // };
-
-    // let isTaro = isTaroProgram(program);
-    // if (isTaro) {
-    //     options.plugins.push([
-    //         "@babel/transform-react-jsx", {
-    //             "pragma": "Nerv.createElement",
-    //             "pragmaFrag": "Nerv.Fragment"
-    //         }
-    //     ])
-    // }
-    // else {
-    //     options.plugins.push([
-    //         "@babel/transform-react-jsx", {
-    //             "pragma": "React.createElement",
-    //             "pragmaFrag": "React.Fragment"
-    //         }
-    //     ])
-    // }
-
     let r = babel.transformFromAstSync(ast, undefined, options);
     let code = r?.code || "/** Babel transform code fail. */";
     return code;
