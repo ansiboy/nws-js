@@ -173,7 +173,7 @@ export class JavaScriptProcessor implements RequestProcessor {
             }
         }
 
-        code = `Physical Path:${physicalPath}\r\n${code}`;
+        code = `// Physical Path:${physicalPath}\r\n${code}`;
 
         const encoding = 'UTF-8';
         return { content: code, headers: { "content-type": `application/x-javascript; charset=${encoding}` } };
